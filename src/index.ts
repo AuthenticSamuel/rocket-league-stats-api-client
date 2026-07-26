@@ -1,22 +1,22 @@
-import net from "node:net";
+import { RocketLeagueStatsClient } from "@/client";
 
-const client = net.createConnection({
+const client = new RocketLeagueStatsClient({
+  host: "127.0.0.1",
   port: 49123,
 });
 
-client.on("connect", () => {
+client.on("connected", () => {
   console.log("Connected !");
 });
 
-client.on("data", (data) => {
-  const parsed = JSON.parse(data.toString());
-  console.log(parsed);
+client.on("disconnected", () => {
+  console.log("Disconnected !");
 });
 
 client.on("error", (error) => {
-  console.error(error);
+  console.warn("Error", error);
 });
 
-client.on("end", () => {
-  console.log("Disconnected");
+client.on("BallHit", (payload) => {
+  console.log(payload);
 });
