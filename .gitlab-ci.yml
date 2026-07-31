@@ -1,0 +1,56 @@
+image: node:26
+
+stages:
+  - verify
+  - publish
+
+default:
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store/
+  tags:
+    - docker
+  before_script:
+    - npm install --global corepack@latest
+    - corepack enable
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+build:
+  stage: verify
+  script:
+    - pnpm run build
+    - pnpm pack --dry-run
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist/
+
+publish:
+  stage: publish
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-.].+)?$/
+  script:
+    - |
+      PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+      EXPECTED_TAG="v${PACKAGE_VERSION}"
+
+      if [ "$CI_COMMIT_TAG" != "$EXPECTED_TAG" ]; then
+        echo "Tag $CI_COMMIT_TAG does not match package version $PACKAGE_VERSION."
+        echo "Expected tag: $EXPECTED_TAG"
+        exit 1
+      fi
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - pnpm publish --no-git-checks

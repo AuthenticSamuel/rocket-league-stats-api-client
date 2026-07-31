@@ -1,6 +1,6 @@
 {
   "name": "@infernaldev/rlstats",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Connect to your Rocket League client and watch game events.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
