@@ -1,2 +1,2 @@
-export { RocketLeagueStatsClient } from "@/client";
-export { ClientGameEvents, GameEvent, Message } from "@/schemas";
+export { RocketLeagueStatsClient } from "./client.js";
+export { ClientGameEvents, GameEvent, Message } from "./schemas.js";

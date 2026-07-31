@@ -1,12 +1,10 @@
 {
   "compilerOptions": {
     "strict": true,
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "target": "es2022",
     "declaration": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "types": ["node"],
     "rootDir": "./src",
     "outDir": "./dist"

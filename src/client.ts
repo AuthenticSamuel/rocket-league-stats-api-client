@@ -1,8 +1,8 @@
-import { GameEvent, Message, type ClientGameEvents } from "@/schemas";
 import { JSONParser } from "@streamparser/json";
 import EventEmitter from "node:events";
 import net from "node:net";
 import z from "zod";
+import { GameEvent, Message, type ClientGameEvents } from "./schemas.js";
 
 type ClientConnectionEvents = {
   connected: [];
