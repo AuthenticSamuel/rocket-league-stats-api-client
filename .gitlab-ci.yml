@@ -1,0 +1,52 @@
+image: node:26
+
+stages:
+  - verify
+  - publish
+
+default:
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+build:
+  stage: verify
+  script:
+    - npm run build
+    - npm pack --dry-run
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist/
+
+publish:
+  stage: publish
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-.].+)?$/
+  script:
+    - |
+      PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+      EXPECTED_TAG="v${PACKAGE_VERSION}"
+
+      if [ "$CI_COMMIT_TAG" != "$EXPECTED_TAG" ]; then
+        echo "Tag $CI_COMMIT_TAG does not match package version $PACKAGE_VERSION."
+        echo "Expected tag: $EXPECTED_TAG"
+        exit 1
+      fi
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - npm publish --ignore-scripts
