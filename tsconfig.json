@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["node"],
+    "module": "commonjs",
+    "target": "es2022",
+    "declaration": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node"],
+    "rootDir": "./src",
+    "outDir": "./dist"
   },
   "include": ["src/**/*.ts"]
 }

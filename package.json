@@ -1,14 +1,14 @@
 {
-  "name": "rocket-league-stats",
-  "version": "1.0.0",
-  "description": "",
-  "main": "src/index.ts",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts"
-  },
+  "name": "@infernaldev/rlstats",
+  "version": "0.0.1",
+  "description": "Connect to your Rocket League client and watch game events.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "keywords": [],
-  "author": "",
+  "author": "Samuel Ward",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
@@ -21,6 +21,5 @@
     "@streamparser/json": "^0.0.22",
     "ws": "^8.21.0",
     "zod": "^4.4.3"
-  },
-  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
+  }
 }
