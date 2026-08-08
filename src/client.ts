@@ -1,32 +1,30 @@
 import { JSONParser } from "@streamparser/json";
 import EventEmitter from "node:events";
-import net from "node:net";
 import z from "zod";
 import { GameEvent, Message, type ClientGameEvents } from "./schemas.js";
 
 type ClientConnectionEvents = {
-  connected: [];
-  disconnected: [];
-  error: [error: Error];
+  Connect: [event: Event];
+  Disconnect: [event: CloseEvent];
+  Error: [error: Error];
 };
 
 type ClientEvents = ClientConnectionEvents & ClientGameEvents;
 
 const ClientParameters = z.object({
-  host: z.string(),
-  port: z.number(),
+  webSocketUrl: z.url(),
 });
 
 type ClientParameters = z.infer<typeof ClientParameters>;
 
 export class RocketLeagueStatsClient extends EventEmitter {
-  private readonly socket: net.Socket;
+  private readonly socket: WebSocket;
   private readonly parser: JSONParser;
 
   constructor(parameters: ClientParameters) {
     super();
 
-    const { host, port } = ClientParameters.parse(parameters);
+    const { webSocketUrl } = ClientParameters.parse(parameters);
 
     this.parser = new JSONParser({
       paths: ["$"],
@@ -39,32 +37,32 @@ export class RocketLeagueStatsClient extends EventEmitter {
     };
 
     this.parser.onError = (error) => {
-      this.emit("error", error);
-      this.socket.destroy();
+      this.emit("Error", error);
+      this.socket.close();
     };
 
-    this.socket = net.createConnection({ host, port });
+    this.socket = new WebSocket(webSocketUrl);
 
-    this.socket.on("connect", () => {
-      this.emit("connected");
+    this.socket.addEventListener("open", (event) => {
+      this.emit("Connect", event);
     });
 
-    this.socket.on("close", () => {
+    this.socket.addEventListener("close", (event) => {
       this.parser.end();
-      this.emit("disconnected");
+      this.emit("Disconnect", event);
     });
 
-    this.socket.on("error", (error) => {
-      this.emit("error", error);
+    this.socket.addEventListener("error", (event) => {
+      this.emit("Error", event);
     });
 
-    this.socket.on("data", (chunk: Buffer) => {
-      this.parser.write(chunk);
+    this.socket.addEventListener("message", (message) => {
+      this.parser.write(message.data);
     });
   }
 
   public disconnect(): void {
-    this.socket.destroy();
+    this.socket.close();
   }
 
   public override on<K extends keyof ClientEvents>(
@@ -88,7 +86,7 @@ export class RocketLeagueStatsClient extends EventEmitter {
       const error = new Error(
         `Received invalid message: ${result.error.message}`,
       );
-      this.emitTyped("error", error);
+      this.emitTyped("Error", error);
       return;
     }
 
@@ -100,6 +98,9 @@ export class RocketLeagueStatsClient extends EventEmitter {
         return;
       case GameEvent.enum.BallHit:
         this.emitTyped(GameEvent.enum.BallHit, message.Data);
+        return;
+      case GameEvent.enum.BoostPickup:
+        this.emitTyped(GameEvent.enum.BoostPickup, message.Data);
         return;
       case GameEvent.enum.ClockUpdatedSeconds:
         this.emitTyped(GameEvent.enum.ClockUpdatedSeconds, message.Data);
@@ -139,6 +140,12 @@ export class RocketLeagueStatsClient extends EventEmitter {
         return;
       case GameEvent.enum.MatchUnpaused:
         this.emitTyped(GameEvent.enum.MatchUnpaused, message.Data);
+        return;
+      case GameEvent.enum.PlayerJoined:
+        this.emitTyped(GameEvent.enum.PlayerJoined, message.Data);
+        return;
+      case GameEvent.enum.PlayerLeft:
+        this.emitTyped(GameEvent.enum.PlayerLeft, message.Data);
         return;
       case GameEvent.enum.PodiumStart:
         this.emitTyped(GameEvent.enum.PodiumStart, message.Data);

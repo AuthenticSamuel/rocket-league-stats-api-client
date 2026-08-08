@@ -3,6 +3,7 @@ import z from "zod";
 export const GameEvent = z.enum([
   "UpdateState",
   "BallHit",
+  "BoostPickup",
   "ClockUpdatedSeconds",
   "CountdownBegin",
   "CrossbarHit",
@@ -16,6 +17,8 @@ export const GameEvent = z.enum([
   "MatchEnded",
   "MatchPaused",
   "MatchUnpaused",
+  "PlayerJoined",
+  "PlayerLeft",
   "PodiumStart",
   "ReplayCreated",
   "RoundStarted",
@@ -43,11 +46,11 @@ const LocationVector = z.object({
 });
 
 const MatchEvent = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
 });
 
 const UpdateState = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   Players: z.array(
     z.union([
       Player,
@@ -61,6 +64,14 @@ const UpdateState = z.object({
         Touches: z.number(),
         CarTouches: z.number(),
         Demos: z.number(),
+        Loadout: z.tuple([
+          z.string(),
+          z.string(),
+          z.string(),
+          z.string(),
+          z.string(),
+          z.string(),
+        ]),
         bHasCar: z.boolean().optional(),
         Speed: z.number().optional(),
         Boost: z.number().optional(),
@@ -69,13 +80,15 @@ const UpdateState = z.object({
         bOnWall: z.boolean().optional(),
         bPowersliding: z.boolean().optional(),
         bDemolished: z.boolean().optional(),
-        bSupersonic: z.boolean().optional(),
         Attacker: Player.optional(),
+        bSupersonic: z.boolean().optional(),
+        PickupClass: z.string(),
       }),
     ]),
   ),
   Game: z.object({
     Teams: z.array(Team),
+    PlaylistId: z.number(),
     TimeSeconds: z.number(),
     bOvertime: z.boolean(),
     Ball: z.object({
@@ -94,7 +107,7 @@ const UpdateState = z.object({
 });
 
 const BallHit = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   Players: z.array(Player),
   Ball: z.object({
     PreHitSpeed: z.number(),
@@ -103,14 +116,23 @@ const BallHit = z.object({
   }),
 });
 
+const BoostPickup = z.object({
+  MatchGuid: z.string(),
+  Player: Player,
+  Location: LocationVector,
+  BoostAmount: z.number(),
+  BoostType: z.enum(["BoostType_Pad", "BoostType_Pill"]),
+  bReplay: z.boolean(),
+});
+
 const ClockUpdatedSeconds = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   TimeSeconds: z.number(),
   bOvertime: z.boolean(),
 });
 
 const CrossbarHit = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   BallSpeed: z.number(),
   ImpactForce: z.number(),
   BallLastTouch: z.object({
@@ -121,7 +143,7 @@ const CrossbarHit = z.object({
 });
 
 const GoalScored = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   GoalSpeed: z.number(),
   GoalTime: z.number(),
   ImpactLocation: LocationVector,
@@ -133,8 +155,31 @@ const GoalScored = z.object({
   Assister: Player.optional(),
 });
 
+const MatchEnded = z.object({
+  MatchGuid: z.string(),
+  WinnerTeamNum: z.number(),
+});
+
+const PlayerJoined = z.object({
+  MatchGuid: z.string(),
+  PlayerName: z.string(),
+  PrimaryId: z.string(),
+});
+
+const PlayerLeft = z.object({
+  MatchGuid: z.string(),
+  PlayerName: z.string(),
+  PrimaryId: z.string(),
+});
+
+const ReplayCreated = z.object({
+  MatchGuid: z.string(),
+  FileName: z.string(),
+  Date: z.string(),
+});
+
 const StatfeedEvent = z.object({
-  MatchGuid: z.string().optional(),
+  MatchGuid: z.string(),
   EventName: z.string(),
   Type: z.string(),
   MainTarget: Player,
@@ -162,6 +207,10 @@ export const Message = z.discriminatedUnion("Event", [
   z.object({
     Event: z.literal(GameEvent.enum.BallHit),
     Data: JsonString.pipe(BallHit),
+  }),
+  z.object({
+    Event: z.literal(GameEvent.enum.BoostPickup),
+    Data: JsonString.pipe(BoostPickup),
   }),
   z.object({
     Event: z.literal(GameEvent.enum.ClockUpdatedSeconds),
@@ -205,7 +254,7 @@ export const Message = z.discriminatedUnion("Event", [
   }),
   z.object({
     Event: z.literal(GameEvent.enum.MatchEnded),
-    Data: JsonString.pipe(MatchEvent),
+    Data: JsonString.pipe(MatchEnded),
   }),
   z.object({
     Event: z.literal(GameEvent.enum.MatchPaused),
@@ -216,12 +265,20 @@ export const Message = z.discriminatedUnion("Event", [
     Data: JsonString.pipe(MatchEvent),
   }),
   z.object({
+    Event: z.literal(GameEvent.enum.PlayerJoined),
+    Data: JsonString.pipe(PlayerJoined),
+  }),
+  z.object({
+    Event: z.literal(GameEvent.enum.PlayerLeft),
+    Data: JsonString.pipe(PlayerLeft),
+  }),
+  z.object({
     Event: z.literal(GameEvent.enum.PodiumStart),
     Data: JsonString.pipe(MatchEvent),
   }),
   z.object({
     Event: z.literal(GameEvent.enum.ReplayCreated),
-    Data: JsonString.pipe(MatchEvent),
+    Data: JsonString.pipe(ReplayCreated),
   }),
   z.object({
     Event: z.literal(GameEvent.enum.RoundStarted),
@@ -236,6 +293,7 @@ export const Message = z.discriminatedUnion("Event", [
 export type ClientGameEvents = {
   [GameEvent.enum.UpdateState]: [payload: z.infer<typeof UpdateState>];
   [GameEvent.enum.BallHit]: [payload: z.infer<typeof BallHit>];
+  [GameEvent.enum.BoostPickup]: [payload: z.infer<typeof BoostPickup>];
   [GameEvent.enum.ClockUpdatedSeconds]: [
     payload: z.infer<typeof ClockUpdatedSeconds>,
   ];
@@ -248,11 +306,13 @@ export type ClientGameEvents = {
   [GameEvent.enum.MatchCreated]: [payload: z.infer<typeof MatchEvent>];
   [GameEvent.enum.MatchInitialized]: [payload: z.infer<typeof MatchEvent>];
   [GameEvent.enum.MatchDestroyed]: [payload: z.infer<typeof MatchEvent>];
-  [GameEvent.enum.MatchEnded]: [payload: z.infer<typeof MatchEvent>];
+  [GameEvent.enum.MatchEnded]: [payload: z.infer<typeof MatchEnded>];
   [GameEvent.enum.MatchPaused]: [payload: z.infer<typeof MatchEvent>];
   [GameEvent.enum.MatchUnpaused]: [payload: z.infer<typeof MatchEvent>];
+  [GameEvent.enum.PlayerJoined]: [payload: z.infer<typeof PlayerJoined>];
+  [GameEvent.enum.PlayerLeft]: [payload: z.infer<typeof PlayerLeft>];
   [GameEvent.enum.PodiumStart]: [payload: z.infer<typeof MatchEvent>];
-  [GameEvent.enum.ReplayCreated]: [payload: z.infer<typeof MatchEvent>];
+  [GameEvent.enum.ReplayCreated]: [payload: z.infer<typeof ReplayCreated>];
   [GameEvent.enum.RoundStarted]: [payload: z.infer<typeof MatchEvent>];
   [GameEvent.enum.StatfeedEvent]: [payload: z.infer<typeof StatfeedEvent>];
 };
