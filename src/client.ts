@@ -1,7 +1,6 @@
-import { JSONParser } from "@streamparser/json";
 import EventEmitter from "node:events";
 import z from "zod";
-import { GameEvent, Message, type ClientGameEvents } from "./schemas.js";
+import { GameEvent, Message, type ClientGameEvents } from "./schemas/index.js";
 
 type ClientConnectionEvents = {
   Connect: [event: Event];
@@ -11,44 +10,38 @@ type ClientConnectionEvents = {
 
 type ClientEvents = ClientConnectionEvents & ClientGameEvents;
 
-const ClientParameters = z.object({
-  webSocketUrl: z.url(),
-});
+const ClientParameters = z.xor([
+  z.object({
+    webSocketUrl: z.url(),
+  }),
+  z.object({
+    host: z.string(),
+    port: z.number(),
+  }),
+]);
 
 type ClientParameters = z.infer<typeof ClientParameters>;
 
 export class RocketLeagueStatsClient extends EventEmitter {
   private readonly socket: WebSocket;
-  private readonly parser: JSONParser;
 
   constructor(parameters: ClientParameters) {
     super();
 
-    const { webSocketUrl } = ClientParameters.parse(parameters);
+    const parsedParameters = ClientParameters.parse(parameters);
 
-    this.parser = new JSONParser({
-      paths: ["$"],
-      separator: "",
-    });
-
-    this.parser.onValue = ({ value, stack }) => {
-      if (stack.length !== 0) return;
-      this.handleMessage(value);
-    };
-
-    this.parser.onError = (error) => {
-      this.emit("Error", error);
-      this.socket.close();
-    };
-
-    this.socket = new WebSocket(webSocketUrl);
+    if ("webSocketUrl" in parsedParameters) {
+      this.socket = new WebSocket(parsedParameters.webSocketUrl);
+    } else {
+      const url = `ws://${parsedParameters.host}:${parsedParameters.port}`;
+      this.socket = new WebSocket(url);
+    }
 
     this.socket.addEventListener("open", (event) => {
       this.emit("Connect", event);
     });
 
     this.socket.addEventListener("close", (event) => {
-      this.parser.end();
       this.emit("Disconnect", event);
     });
 
@@ -57,7 +50,12 @@ export class RocketLeagueStatsClient extends EventEmitter {
     });
 
     this.socket.addEventListener("message", (message) => {
-      this.parser.write(message.data);
+      try {
+        const rawMessage = JSON.parse(message.data);
+        this.handleMessage(rawMessage);
+      } catch (error) {
+        console.error(error);
+      }
     });
   }
 
