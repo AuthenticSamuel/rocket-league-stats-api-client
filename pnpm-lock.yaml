@@ -207,6 +207,9 @@ importers:
 
   .:
     dependencies:
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -507,6 +510,10 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  events@3.3.0:
+    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
+    engines: {node: '>=0.8.x'}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -700,6 +707,8 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.1
       '@esbuild/win32-ia32': 0.28.1
       '@esbuild/win32-x64': 0.28.1
+
+  events@3.3.0: {}
 
   fsevents@2.3.3:
     optional: true

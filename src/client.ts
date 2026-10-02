@@ -1,4 +1,4 @@
-import EventEmitter from "node:events";
+import EventEmitter from "events";
 import z from "zod";
 import { GameEvent, Message, type ClientGameEvents } from "./schemas/index.js";
 

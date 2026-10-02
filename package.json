@@ -1,6 +1,6 @@
 {
   "name": "@infernaldev/rlstats",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Connect to your Rocket League client and watch game events.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,6 +27,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "events": "^3.3.0",
     "zod": "^4.6.5"
   }
 }
