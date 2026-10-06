@@ -25,7 +25,7 @@ const UpdateStatePlayer = z.object({
   bDemolished: z.boolean().optional(),
   Attacker: Player.optional(),
   bSupersonic: z.boolean().optional(),
-  PickupClass: z.string(),
+  PickupClass: z.string().optional(),
 });
 
 const UpdateStateGame = z.object({
