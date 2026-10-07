@@ -48,7 +48,7 @@ const UpdateStateGame = z.object({
 });
 
 export const UpdateState = z.object({
-  MatchGuid: z.string(),
+  MatchGuid: z.string().optional(),
   Players: z.array(UpdateStatePlayer),
   Game: UpdateStateGame,
 });
