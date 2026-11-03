@@ -19,7 +19,7 @@
   },
   "keywords": [],
   "author": "Samuel Ward",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "devDependencies": {
     "@types/node": "^26.1.1",
